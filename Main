@@ -1,0 +1,234 @@
+local MacStyleLib = {}
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Constants for styling
+local COLORS = {
+    BACKGROUND = Color3.fromRGB(242, 242, 242),
+    BUTTON = Color3.fromRGB(255, 255, 255),
+    BUTTON_HOVER = Color3.fromRGB(230, 230, 230),
+    TEXT = Color3.fromRGB(50, 50, 50),
+    ACCENT = Color3.fromRGB(0, 122, 255),
+    TRAFFIC_RED = Color3.fromRGB(255, 95, 87),
+    TRAFFIC_YELLOW = Color3.fromRGB(255, 189, 46),
+    TRAFFIC_GREEN = Color3.fromRGB(39, 201, 63)
+}
+
+function MacStyleLib.new(title)
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "MacStyleUI"
+    gui.ResetOnSpawn = false
+    
+    -- Main window frame
+    local window = Instance.new("Frame")
+    window.Size = UDim2.new(0, 300, 0, 400)
+    window.Position = UDim2.new(0.5, -150, 0.5, -200)
+    window.BackgroundColor3 = COLORS.BACKGROUND
+    window.BorderSizePixel = 0
+    window.Parent = gui
+    
+    -- Create title bar
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1, 0, 0, 30)
+    titleBar.BackgroundColor3 = COLORS.BACKGROUND
+    titleBar.BorderSizePixel = 0
+    titleBar.Parent = window
+    
+    -- Traffic light buttons
+    local function createTrafficLight(color, position)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0, 12, 0, 12)
+        button.Position = UDim2.new(0, position, 0.5, -6)
+        button.BackgroundColor3 = color
+        button.Text = ""
+        button.Parent = titleBar
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = button
+        
+        return button
+    end
+    
+    local closeButton = createTrafficLight(COLORS.TRAFFIC_RED, 10)
+    local minimizeButton = createTrafficLight(COLORS.TRAFFIC_YELLOW, 30)
+    local maximizeButton = createTrafficLight(COLORS.TRAFFIC_GREEN, 50)
+    
+    -- Title text
+    local titleText = Instance.new("TextLabel")
+    titleText.Size = UDim2.new(1, -100, 1, 0)
+    titleText.Position = UDim2.new(0, 70, 0, 0)
+    titleText.BackgroundTransparency = 1
+    titleText.Text = title
+    titleText.TextColor3 = COLORS.TEXT
+    titleText.Font = Enum.Font.SourceSansBold
+    titleText.TextSize = 14
+    titleText.Parent = titleBar
+    
+    -- Content container
+    local container = Instance.new("ScrollingFrame")
+    container.Size = UDim2.new(1, -20, 1, -40)
+    container.Position = UDim2.new(0, 10, 0, 35)
+    container.BackgroundTransparency = 1
+    container.ScrollBarThickness = 6
+    container.Parent = window
+    
+    -- Make window draggable
+    local dragging = false
+    local dragStart = nil
+    local startPos = nil
+    
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = window.Position
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            window.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    -- Corner radius for main window
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = window
+    
+    -- Shadow effect
+    local shadow = Instance.new("ImageLabel")
+    shadow.Size = UDim2.new(1, 20, 1, 20)
+    shadow.Position = UDim2.new(0, -10, 0, -10)
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxassetid://297774371"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.8
+    shadow.ZIndex = -1
+    shadow.Parent = window
+    
+    gui.Parent = game.CoreGui
+    
+    local lib = {}
+    
+    function lib:AddButton(text, callback)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(1, 0, 0, 35)
+        button.BackgroundColor3 = COLORS.BUTTON
+        button.Text = text
+        button.TextColor3 = COLORS.TEXT
+        button.Font = Enum.Font.SourceSans
+        button.TextSize = 14
+        button.Parent = container
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 6)
+        corner.Parent = button
+        
+        button.MouseButton1Click:Connect(callback)
+        
+        -- Hover effect
+        button.MouseEnter:Connect(function()
+            TweenService:Create(button, TweenInfo.new(0.2), {
+                BackgroundColor3 = COLORS.BUTTON_HOVER
+            }):Play()
+        end)
+        
+        button.MouseLeave:Connect(function()
+            TweenService:Create(button, TweenInfo.new(0.2), {
+                BackgroundColor3 = COLORS.BUTTON
+            }):Play()
+        end)
+    end
+    
+    function lib:AddSlider(text, min, max, default, callback)
+        local sliderFrame = Instance.new("Frame")
+        sliderFrame.Size = UDim2.new(1, 0, 0, 50)
+        sliderFrame.BackgroundTransparency = 1
+        sliderFrame.Parent = container
+        
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 0, 20)
+        label.BackgroundTransparency = 1
+        label.Text = text
+        label.TextColor3 = COLORS.TEXT
+        label.Font = Enum.Font.SourceSans
+        label.TextSize = 14
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = sliderFrame
+        
+        local sliderBG = Instance.new("Frame")
+        sliderBG.Size = UDim2.new(1, 0, 0, 4)
+        sliderBG.Position = UDim2.new(0, 0, 0.7, 0)
+        sliderBG.BackgroundColor3 = COLORS.BUTTON_HOVER
+        sliderBG.Parent = sliderFrame
+        
+        local sliderFill = Instance.new("Frame")
+        sliderFill.Size = UDim2.new(0.5, 0, 1, 0)
+        sliderFill.BackgroundColor3 = COLORS.ACCENT
+        sliderFill.Parent = sliderBG
+        
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(1, 0)
+        corner.Parent = sliderBG
+        
+        local corner2 = Instance.new("UICorner")
+        corner2.CornerRadius = UDim.new(1, 0)
+        corner2.Parent = sliderFill
+        
+        local thumb = Instance.new("Frame")
+        thumb.Size = UDim2.new(0, 16, 0, 16)
+        thumb.Position = UDim2.new(0.5, -8, 0.5, -8)
+        thumb.BackgroundColor3 = COLORS.ACCENT
+        thumb.Parent = sliderFill
+        
+        local thumbCorner = Instance.new("UICorner")
+        thumbCorner.CornerRadius = UDim.new(1, 0)
+        thumbCorner.Parent = thumb
+        
+        -- Slider functionality
+        local dragging = false
+        
+        thumb.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+            end
+        end)
+        
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = false
+            end
+        end)
+        
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local pos = math.clamp(
+                    (input.Position.X - sliderBG.AbsolutePosition.X) / sliderBG.AbsoluteSize.X,
+                    0,
+                    1
+                )
+                sliderFill.Size = UDim2.new(pos, 0, 1, 0)
+                local value = math.floor(min + (max - min) * pos)
+                callback(value)
+            end
+        end)
+    end
+    
+    return lib
+end
+
+return MacStyleLib
