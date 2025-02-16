@@ -485,3 +485,5 @@ function window:CreateTabs(tabs)
     
     return tabsFrame
 end
+
+return MacOSLib
