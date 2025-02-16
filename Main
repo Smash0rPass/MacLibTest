@@ -59,6 +59,7 @@ function MacOSLib:CreateWindow(title)
         CornerRadius = UDim.new(0, 10),
         Parent = header
     })
+
     
     -- Window controls (traffic lights)
     local closeButton = create("TextButton", {
@@ -67,6 +68,13 @@ function MacOSLib:CreateWindow(title)
         BackgroundColor3 = Color3.fromRGB(255, 95, 87),
         Text = "",
         Parent = header
+    })
+
+    local dropdownFrame = create("Frame", {
+        Size = UDim2.new(1, -20, 0, 30),
+        Position = UDim2.new(0, 10, 0, #container:GetChildren() * 40),
+        BackgroundColor3 = Colors.Background,
+        Parent = container
     })
     
     local minimizeButton = create("TextButton", {
@@ -84,6 +92,7 @@ function MacOSLib:CreateWindow(title)
         Text = "",
         Parent = header
     })
+
     
     -- Make buttons circular
     for _, button in pairs({closeButton, minimizeButton, maximizeButton}) do
