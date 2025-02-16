@@ -1,3 +1,434 @@
+--MacOSLib
+local MacOSLib = {}
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Utility functions
+local function create(className, properties)
+    local instance = Instance.new(className)
+    for k, v in pairs(properties) do
+        instance[k] = v
+    end
+    return instance
+end
+
+-- UI Colors
+local Colors = {
+    Background = Color3.fromRGB(236, 236, 236),
+    Primary = Color3.fromRGB(0, 122, 255),
+    Secondary = Color3.fromRGB(142, 142, 147),
+    Text = Color3.fromRGB(0, 0, 0),
+    Border = Color3.fromRGB(209, 209, 209),
+    WindowHeader = Color3.fromRGB(220, 220, 220)
+}
+
+function MacOSLib:CreateWindow(title)
+    local window = {}
+    
+    -- Main GUI Frame
+    local gui = create("ScreenGui", {
+        Name = "MacOSGui",
+        Parent = game.CoreGui
+    })
+    
+    local mainFrame = create("Frame", {
+        Name = "MainFrame",
+        Size = UDim2.new(0, 500, 0, 300),
+        Position = UDim2.new(0.5, -250, 0.5, -150),
+        BackgroundColor3 = Colors.Background,
+        BorderSizePixel = 0,
+        Parent = gui
+    })
+    
+    -- Round corners
+    local corner = create("UICorner", {
+        CornerRadius = UDim.new(0, 10),
+        Parent = mainFrame
+    })
+    
+    -- Window header
+    local header = create("Frame", {
+        Name = "Header",
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundColor3 = Colors.WindowHeader,
+        BorderSizePixel = 0,
+        Parent = mainFrame
+    })
+    
+    create("UICorner", {
+        CornerRadius = UDim.new(0, 10),
+        Parent = header
+    })
+
+    
+    -- Window controls (traffic lights)
+    local closeButton = create("TextButton", {
+        Size = UDim2.new(0, 12, 0, 12),
+        Position = UDim2.new(0, 10, 0, 9),
+        BackgroundColor3 = Color3.fromRGB(255, 95, 87),
+        Text = "",
+        Parent = header
+    })
+    
+    local minimizeButton = create("TextButton", {
+        Size = UDim2.new(0, 12, 0, 12),
+        Position = UDim2.new(0, 30, 0, 9),
+        BackgroundColor3 = Color3.fromRGB(255, 189, 46),
+        Text = "",
+        Parent = header
+    })
+    
+    local maximizeButton = create("TextButton", {
+        Size = UDim2.new(0, 12, 0, 12),
+        Position = UDim2.new(0, 50, 0, 9),
+        BackgroundColor3 = Color3.fromRGB(39, 201, 63),
+        Text = "",
+        Parent = header
+    })
+
+    
+    -- Make buttons circular
+    for _, button in pairs({closeButton, minimizeButton, maximizeButton}) do
+        create("UICorner", {
+            CornerRadius = UDim.new(1, 0),
+            Parent = button
+        })
+    end
+    
+    -- Window title
+    local titleLabel = create("TextLabel", {
+        Size = UDim2.new(1, -120, 1, 0),
+        Position = UDim2.new(0, 70, 0, 0),
+        BackgroundTransparency = 1,
+        Text = title,
+        TextColor3 = Colors.Text,
+        TextSize = 14,
+        Font = Enum.Font.SourceSansSemibold,
+        Parent = header
+    })
+    
+    -- Content container
+    local container = create("ScrollingFrame", {
+        Size = UDim2.new(1, -20, 1, -40),
+        Position = UDim2.new(0, 10, 0, 35),
+        BackgroundTransparency = 1,
+        ScrollBarThickness = 6,
+        ScrollBarImageColor3 = Colors.Secondary,
+        Parent = mainFrame
+    })
+    
+    -- Make window draggable
+    local isDragging = false
+    local dragInput
+    local dragStart
+    local startPos
+    
+    header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+        end
+    end)
+    
+    header.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isDragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    
+    game:GetService("RunService").RenderStepped:Connect(function()
+        if isDragging and dragInput then
+            local delta = dragInput.Position - dragStart
+            mainFrame.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+    
+    -- Button creator function
+    function window:CreateButton(text, callback)
+        local button = create("TextButton", {
+            Size = UDim2.new(1, -20, 0, 30),
+            Position = UDim2.new(0, 10, 0, #container:GetChildren() * 40),
+            BackgroundColor3 = Colors.Primary,
+            Text = text,
+            TextColor3 = Color3.fromRGB(255, 255, 255),
+            TextSize = 14,
+            Font = Enum.Font.SourceSansSemibold,
+            Parent = container
+        })
+        
+        create("UICorner", {
+            CornerRadius = UDim.new(0, 6),
+            Parent = button
+        })
+        
+        button.MouseButton1Click:Connect(callback)
+        return button
+    end
+    
+    -- Toggle creator function
+    function window:CreateToggle(text, default, callback)
+        local toggleFrame = create("Frame", {
+            Size = UDim2.new(1, -20, 0, 30),
+            Position = UDim2.new(0, 10, 0, #container:GetChildren() * 40),
+            BackgroundTransparency = 1,
+            Parent = container
+        })
+        
+        local label = create("TextLabel", {
+            Size = UDim2.new(1, -60, 1, 0),
+            Position = UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 1,
+            Text = text,
+            TextColor3 = Colors.Text,
+            TextSize = 14,
+            Font = Enum.Font.SourceSansSemibold,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = toggleFrame
+        })
+        
+        local toggle = create("Frame", {
+            Size = UDim2.new(0, 40, 0, 20),
+            Position = UDim2.new(1, -40, 0.5, -10),
+            BackgroundColor3 = default and Colors.Primary or Colors.Secondary,
+            Parent = toggleFrame
+        })
+        
+        create("UICorner", {
+            CornerRadius = UDim.new(1, 0),
+            Parent = toggle
+        })
+        
+        local knob = create("Frame", {
+            Size = UDim2.new(0, 16, 0, 16),
+            Position = UDim2.new(default and 1 or 0, default and -18 or 2, 0.5, -8),
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            Parent = toggle
+        })
+        
+        create("UICorner", {
+            CornerRadius = UDim.new(1, 0),
+            Parent = knob
+        })
+        
+        local enabled = default
+        toggle.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                enabled = not enabled
+                
+                local targetPos = enabled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+                local targetColor = enabled and Colors.Primary or Colors.Secondary
+                
+                TweenService:Create(knob, TweenInfo.new(0.2), {Position = targetPos}):Play()
+                TweenService:Create(toggle, TweenInfo.new(0.2), {BackgroundColor3 = targetColor}):Play()
+                
+                callback(enabled)
+            end
+        end)
+        
+        return toggleFrame
+    end
+
+-- Dropdown creator function
+function window:CreateDropdown(text, options, callback)
+    local dropdownFrame = create("Frame", {
+        Size = UDim2.new(1, -20, 0, 30),
+        Position = UDim2.new(0, 10, 0, #container:GetChildren() * 40),
+        BackgroundColor3 = Colors.Background,
+        Parent = container
+    })
+    
+    create("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = dropdownFrame
+    })
+    
+    local dropdownButton = create("TextButton", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = Colors.Text,
+        TextSize = 14,
+        Font = Enum.Font.SourceSansSemibold,
+        Parent = dropdownFrame
+    })
+    
+    local optionsFrame = create("Frame", {
+        Size = UDim2.new(1, 0, 0, #options * 30),
+        Position = UDim2.new(0, 0, 1, 0),
+        BackgroundColor3 = Colors.Background,
+        Visible = false,
+        ZIndex = 2,
+        Parent = dropdownFrame
+    })
+    
+    create("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = optionsFrame
+    })
+    
+    for i, option in ipairs(options) do
+        local optionButton = create("TextButton", {
+            Size = UDim2.new(1, 0, 0, 30),
+            Position = UDim2.new(0, 0, 0, (i-1) * 30),
+            BackgroundTransparency = 1,
+            Text = option,
+            TextColor3 = Colors.Text,
+            TextSize = 14,
+            Font = Enum.Font.SourceSans,
+            ZIndex = 2,
+            Parent = optionsFrame
+        })
+        
+        optionButton.MouseButton1Click:Connect(function()
+            dropdownButton.Text = text .. ": " .. option
+            optionsFrame.Visible = false
+            callback(option)
+        end)
+    end
+    
+    dropdownButton.MouseButton1Click:Connect(function()
+        optionsFrame.Visible = not optionsFrame.Visible
+    end)
+    
+    return dropdownFrame
+end
+
+-- Slider creator function
+function window:CreateSlider(text, min, max, default, callback)
+    local sliderFrame = create("Frame", {
+        Size = UDim2.new(1, -20, 0, 50),
+        Position = UDim2.new(0, 10, 0, #container:GetChildren() * 40),
+        BackgroundTransparency = 1,
+        Parent = container
+    })
+    
+    local label = create("TextLabel", {
+        Size = UDim2.new(1, 0, 0, 20),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = Colors.Text,
+        TextSize = 14,
+        Font = Enum.Font.SourceSansSemibold,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = sliderFrame
+    })
+    
+    local sliderBar = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 6),
+        Position = UDim2.new(0, 0, 0.7, 0),
+        BackgroundColor3 = Colors.Secondary,
+        Parent = sliderFrame
+    })
+    
+    create("UICorner", {
+        CornerRadius = UDim.new(1, 0),
+        Parent = sliderBar
+    })
+    
+    local sliderFill = create("Frame", {
+        Size = UDim2.new((default - min)/(max - min), 0, 1, 0),
+        BackgroundColor3 = Colors.Primary,
+        Parent = sliderBar
+    })
+    
+    create("UICorner", {
+        CornerRadius = UDim.new(1, 0),
+        Parent = sliderFill
+    })
+    
+    local sliderButton = create("TextButton", {
+        Size = UDim2.new(0, 16, 0, 16),
+        Position = UDim2.new((default - min)/(max - min), -8, 0.5, -8),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        Text = "",
+        Parent = sliderBar
+    })
+    
+    create("UICorner", {
+        CornerRadius = UDim.new(1, 0),
+        Parent = sliderButton
+    })
+    
+    local dragging = false
+    
+    sliderButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local pos = math.clamp((input.Position.X - sliderBar.AbsolutePosition.X) / sliderBar.AbsoluteSize.X, 0, 1)
+            local value = math.floor(min + (max - min) * pos)
+            
+            sliderFill.Size = UDim2.new(pos, 0, 1, 0)
+            sliderButton.Position = UDim2.new(pos, -8, 0.5, -8)
+            
+            callback(value)
+        end
+    end)
+    
+    return sliderFrame
+end
+
+-- Color Picker creator function
+function window:CreateColorPicker(text, default, callback)
+    local colorPickerFrame = create("Frame", {
+        Size = UDim2.new(1, -20, 0, 30),
+        Position = UDim2.new(0, 10, 0, #container:GetChildren() * 40),
+        BackgroundTransparency = 1,
+        Parent = container
+    })
+    
+    local label = create("TextLabel", {
+        Size = UDim2.new(1, -40, 1, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = Colors.Text,
+        TextSize = 14,
+        Font = Enum.Font.SourceSansSemibold,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = colorPickerFrame
+    })
+    
+    local colorDisplay = create("TextButton", {
+        Size = UDim2.new(0, 30, 0, 30),
+        Position = UDim2.new(1, -30, 0, 0),
+        BackgroundColor3 = default,
+        Text = "",
+        Parent = colorPickerFrame
+    })
+    
+    create("UICorner", {
+        CornerRadius = UDim.new(0, 6),
+        Parent = colorDisplay
+    })
+    
+    -- Add color picker functionality here
+    -- You can implement a custom color picker UI or use a third-party solution
+    
+    return colorPickerFrame
+end
+
 function window:CreateTabs(tabs)
     -- Create a tab container
     local tabContainer = create("Frame", {
@@ -69,3 +500,8 @@ function window:CreateTabs(tabs)
     
     return tabContents
 end
+
+    return window
+end
+
+return MacOSLib
