@@ -1,3 +1,7 @@
+local MacOSLib = {}
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
 -- Utility functions
 local function create(className, properties)
     local instance = Instance.new(className)
