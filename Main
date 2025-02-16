@@ -1,3 +1,4 @@
+--MacOSLib
 local MacOSLib = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -236,9 +237,6 @@ function MacOSLib:CreateWindow(title)
         
         return toggleFrame
     end
-    
-    return window
-end
 
 -- Dropdown creator function
 function window:CreateDropdown(text, options, callback)
@@ -486,4 +484,6 @@ function window:CreateTabs(tabs)
     return tabsFrame
 end
 
+return window
+end
 return MacOSLib
